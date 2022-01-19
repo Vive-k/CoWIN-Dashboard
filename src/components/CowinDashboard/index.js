@@ -24,10 +24,8 @@ const dataFetchedStatusConstants = {
 
 class CowinDashboard extends Component {
   state = {
-    fetchDataResponse: dataFetchedStatusConstants.intial,
-    vaccinationCoverageData: [],
-    vaccineByGenderData: [],
-    vaccinationByAgeData: [],
+    fetchDataResponse: dataFetchedStatusConstants.initial,
+    vaccinationData: {},
   }
 
   componentDidMount() {
@@ -37,12 +35,11 @@ class CowinDashboard extends Component {
   getDataOfVaccination = async () => {
     this.setState({fetchDataResponse: dataFetchedStatusConstants.loading})
 
-    const covidVaccinationDataApiUrl =
-      'https://apis.ccbp.in/covid-vaccination-data'
+    const vaccinationDataApiUrl = 'https://apis.ccbp.in/covid-vaccination-data'
 
-    const response = await fetch(covidVaccinationDataApiUrl)
+    const response = await fetch(vaccinationDataApiUrl)
 
-    if (response.ok) {
+    if (response.ok === true) {
       const data = await response.json()
 
       const updatedData = {
@@ -51,37 +48,38 @@ class CowinDashboard extends Component {
           dose1: each.dose_1,
           dose2: each.dose_2,
         })),
-        vaccinationByAge: data.vaccination_by_age,
-        vaccinationByGender: data.vaccination_by_gender,
+        vaccinationByAge: data.vaccination_by_age.map(range => ({
+          age: range.age,
+          count: range.count,
+        })),
+        vaccinationByGender: data.vaccination_by_gender.map(genderType => ({
+          gender: genderType.gender,
+          count: genderType.count,
+        })),
       }
 
       this.setState({
-        vaccinationCoverageData: updatedData.last7DaysVaccination,
-        vaccineByGenderData: updatedData.vaccinationByGender,
-        vaccinationByAgeData: updatedData.vaccinationByAge,
+        vaccinationData: updatedData,
       })
 
       this.setState({fetchDataResponse: dataFetchedStatusConstants.success})
     }
-    if (!response.ok) {
+    if (response.ok === false) {
       this.setState({fetchDataResponse: dataFetchedStatusConstants.failure})
     }
   }
 
   onSuccess = () => {
-    const {
-      vaccinationCoverageData,
-      vaccineByGenderData,
-      vaccinationByAgeData,
-    } = this.state
+    const {vaccinationData} = this.state
 
+    console.log(vaccinationData)
     return (
       <>
-        <VaccinationCoverage data={vaccinationCoverageData} />
+        <VaccinationCoverage data={vaccinationData.last7DaysVaccination} />
 
-        <VaccinationByGender data={vaccineByGenderData} />
+        <VaccinationByGender data={vaccinationData.vaccinationByGender} />
 
-        <VaccinationByAge data={vaccinationByAgeData} />
+        <VaccinationByAge data={vaccinationData.vaccinationByAge} />
       </>
     )
   }
